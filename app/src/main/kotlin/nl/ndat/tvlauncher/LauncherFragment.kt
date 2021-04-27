@@ -9,9 +9,12 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.tvprovider.media.tv.TvContractCompat
+import androidx.tvprovider.media.tv.WatchNextProgram
 import nl.ndat.tvlauncher.databinding.FragmentLauncherBinding
 import nl.ndat.tvlauncher.utils.createSwitchIntent
 import nl.ndat.tvlauncher.utils.loadBanner
@@ -30,7 +33,30 @@ class LauncherFragment : Fragment() {
 		binding.apps.requestFocus()
 		addEventListeners()
 		addApps()
+		addIdk()
 		return binding.root
+	}
+
+	private fun addIdk() {
+		registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+			println("Permission state -> $it")
+			val cursor = requireContext().contentResolver.query(
+				TvContractCompat.WatchNextPrograms.CONTENT_URI,
+				WatchNextProgram.PROJECTION,
+				null,
+				null,
+				null
+			)
+
+			val programs = mutableListOf<WatchNextProgram>()
+			if (cursor != null && cursor.moveToFirst()) {
+				do {
+					programs.add(WatchNextProgram.fromCursor(cursor))
+				} while (cursor.moveToNext())
+			}
+
+			println(programs)
+		}.launch("com.android.providers.tv.permission.ACCESS_ALL_EPG_DATA")
 	}
 
 	private fun addEventListeners() {
